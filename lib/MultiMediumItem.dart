@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sample_flutter_app/Description.dart';
-import 'package:sample_flutter_app/Multimedium.dart';
+import 'package:sample_flutter_app/data_objects/Multimedium.dart';
 import 'package:sample_flutter_app/Thumbnail.dart';
 
 class MultiMediumItem extends StatefulWidget {

@@ -1,15 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'package:http/http.dart' as http;
-import 'package:sample_flutter_app/Configuration.dart';
+import 'package:sample_flutter_app/MediaHunterApi.dart';
 import 'package:sample_flutter_app/MultiMediumItem.dart';
 
-import 'Multimedium.dart';
+import 'package:sample_flutter_app/data_objects/Multimedium.dart';
 
 class MultimediumList extends StatefulWidget {
+  VoidCallback splashDisappear;
+
+  MultimediumList({this.splashDisappear});
+
   @override
   _MultimediumListState createState() => _MultimediumListState();
 }
@@ -17,11 +20,20 @@ class MultimediumList extends StatefulWidget {
 class _MultimediumListState extends State<MultimediumList> {
   int counter = 0;
   List<Multimedium> _posts = new List();
+  bool disableButton = false;
+  bool loading = true;
 
   @override
   Widget build(BuildContext context) {
     List<Widget> multimedia = new List();
-
+    if (_posts.length == 0) {
+      multimedia.add(Center(
+        child: Padding(
+          child: Text(loading? "Loading" : "No data loaded."),
+          padding: EdgeInsets.only(top: 50, bottom: 20),
+        ),
+      ));
+    }
     multimedia.addAll(_posts.map((item) => new MultiMediumItem(post: item)).toList());
 
     multimedia.add(Padding(
@@ -34,7 +46,7 @@ class _MultimediumListState extends State<MultimediumList> {
             style: TextStyle(fontSize: 20),
           ),
         ),
-        onPressed: _loadAnotherPage,
+        onPressed: this.disableButton || this._posts.length == 0 ? null : _loadAnotherPage,
       ),
     ));
 
@@ -47,41 +59,47 @@ class _MultimediumListState extends State<MultimediumList> {
   @override
   void initState() {
     super.initState();
-    _handleRefresh();
+    _handleRefresh().then((_) => SchedulerBinding.instance.addPostFrameCallback((_) => widget.splashDisappear()));
   }
 
   Future<void> _handleRefresh() async {
     Completer completer = new Completer();
     setState(() {
       counter = 0;
+      disableButton = false;
     });
-    completer.complete(_getPageOfPosts(0));
+    completer.complete(_updatePosts(0));
     return completer.future;
   }
 
-  _loadAnotherPage() {
+  _loadAnotherPage() async {
     setState(() {
       counter++;
     });
-    _getPageOfPosts(counter);
+    _updatePosts(counter);
   }
 
-  Future<void> _getPageOfPosts(int page) async {
-    http.Response response = await http.get(Uri.encodeFull(Configuration.BACKEND_URL + "/api/records/" + page.toString()));
-    List<dynamic> array = json.decode(response.body);
-    List<Multimedium> posts;
-    if (page == 0) {
-      posts = new List();
-    } else {
-      posts = _posts;
-    }
-    for (int i = 0; i < array.length; i++) {
-      Map<String, dynamic> post = array[i];
-      posts.add(Multimedium.fromJson(post));
-    }
+  Future<void> _updatePosts(int counter) async {
     setState(() {
-      _posts = posts;
+      loading = true;
     });
-    return;
+    List<Multimedium> posts = await MediaHunterApi.getPageOfMultimedia(counter);
+    if (counter == 0) {
+      setState(() {
+        _posts = posts;
+        loading = false;
+      });
+    } else {
+      bool disabled = false;
+      if (posts.length < 10) {
+        disabled = true;
+      }
+      _posts.addAll(posts);
+      setState(() {
+        _posts = _posts;
+        disableButton = disabled;
+        loading = false;
+      });
+    }
   }
 }

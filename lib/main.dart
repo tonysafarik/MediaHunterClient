@@ -8,8 +8,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      home: MainPage(title: 'Blading Media'),
+      title: 'Media Hunter Client App',
+      home: MainPage(title: 'Media Hunter Client App'),
     );
   }
 }

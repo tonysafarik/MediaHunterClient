@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sample_flutter_app/Description.dart';
 
-import 'Channel.dart';
+import 'package:sample_flutter_app/data_objects/Channel.dart';
 
 class ChannelItem extends StatefulWidget {
   Channel post;
